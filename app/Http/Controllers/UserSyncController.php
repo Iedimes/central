@@ -6,114 +6,91 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class UserSyncController extends Controller
 {
-    /**
-     * Lista de sistemas isla y sus conexiones definidas en config/database.php
-     */
     private $systems = [
         'Fonavis' => 'pgsqlfonavis',
         'Concurso' => 'pgsqlconcurso',
-        // agregar más sistemas si es necesario
     ];
 
-    /**
-     * Verifica en qué sistemas existe el usuario
-     */
     private function checkUserAcrossSystems($email)
     {
         $foundIn = [];
-
         foreach ($this->systems as $name => $connection) {
-            $user = DB::connection($connection)
-                ->table('admin_users')
-                ->where('email', $email)
-                ->first();
-
-            if ($user) {
-                $foundIn[$name] = $user;
-            }
+            $user = DB::connection($connection)->table('admin_users')->where('email', $email)->first();
+            if ($user) $foundIn[$name] = $user;
         }
-
         return $foundIn;
+
     }
 
-    /**
-     * Sincroniza la contraseña de Central en los sistemas isla
-     */
-    private function syncPassword($email, $plainPassword)
-    {
-        foreach ($this->systems as $name => $connection) {
-            $user = DB::connection($connection)
-                ->table('admin_users')
-                ->where('email', $email)
-                ->first();
 
+
+    /**
+     * Genera token seguro de login automático en sistemas isla
+     */
+    private function generateLoginToken($email)
+    {
+        $tokens = [];
+        foreach ($this->systems as $name => $connection) {
+            $user = DB::connection($connection)->table('admin_users')->where('email', $email)->first();
             if ($user) {
-                DB::connection($connection)
-                    ->table('admin_users')
-                    ->where('id', $user->id)
+                $token = Str::random(60);
+                $expire = Carbon::now()->addMinutes(5); // token válido 5 minutos
+                DB::connection($connection)->table('admin_users')->where('id', $user->id)
                     ->update([
-                        'password' => Hash::make($plainPassword)
+                        'login_token' => $token,
+                        'login_token_expire_at' => $expire
                     ]);
+                $tokens[$name] = $token;
             }
         }
+        return $tokens;
     }
 
-    /**
-     * Método principal: verifica y sincroniza usando el usuario logueado en Craftable
-     */
     public function checkAndSync(Request $request)
     {
         $user = Auth::guard('admin')->user();
-        if (!$user) {
-            return redirect()->route('admin.login')->withErrors(['msg' => 'Debes iniciar sesión en Central']);
-        }
+        if (!$user) return redirect()->route('admin.login');
 
         $email = $user->email;
 
-        // Opcional: si quieres sincronizar la contraseña, debes definirla
-        // $plainPassword = $request->input('password'); // si la obtienes desde un formulario
-        // $this->syncPassword($email, $plainPassword);
-
-        // Verificar en otros sistemas
+        // 2️⃣ verificamos en qué sistemas existe
         $foundIn = $this->checkUserAcrossSystems($email);
 
-        // Guardar en sesión los sistemas donde existe
-        $request->session()->put('systems', array_keys($foundIn));
+        // 3️⃣ generamos tokens de login automático
+        $tokens = $this->generateLoginToken($email);
 
-        return view('dashboard', ['systems' => array_keys($foundIn)]);
+        // guardamos tokens en sesión
+        $request->session()->put('login_tokens', $tokens);
+
+        return view('dashboard', [
+            'systems' => array_keys($foundIn),
+            'tokens' => $tokens
+        ]);
     }
 
     /**
-     * Conexión dinámica a un sistema isla
+     * Redirección a sistema isla usando token
      */
-    public function connectToSystem(Request $request, $systemName)
+    public function redirectToSystem(Request $request, $systemName)
     {
         $user = Auth::guard('admin')->user();
-        if (!$user) {
-            return redirect()->route('admin.login');
-        }
+        if (!$user) return redirect()->route('admin.login');
 
-        if (!isset($this->systems[$systemName])) {
-            abort(404, 'Sistema no encontrado.');
-        }
+        $token = session("login_tokens.$systemName");
+        if (!$token) abort(403, 'No token disponible');
 
-        $connectionName = $this->systems[$systemName];
+        $url = match($systemName) {
+            'Fonavis' => "http://127.0.0.1:8001/admin/login-auto?token=$token",
+            'Concurso' => "http://127.0.0.1:8002/admin/login-auto?token=$token",
+            default => abort(404)
+        };
 
-        // Crear configuración dinámica
-        $config = DB::connection($connectionName)->getConfig();
 
-        // Ejemplo: consultar tabla de ejemplo en sistema isla
-        $data = DB::connection($connectionName)
-            ->table('admin_users')
-            ->where('email', $user->email)
-            ->first();
-
-        return response()->json([
-            'system' => $systemName,
-            'user' => $data
-        ]);
+        return redirect($url);
     }
 }

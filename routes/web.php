@@ -24,11 +24,9 @@ Route::get('/central/check-systems', [UserSyncController::class, 'checkAndSync']
     ->middleware('auth:admin')
     ->name('central.check-systems');
 
-// Conexión dinámica a un sistema isla
-Route::get('/central/connect/{systemName}', [UserSyncController::class, 'connectToSystem'])
+Route::get('/central/redirect/{systemName}', [UserSyncController::class, 'redirectToSystem'])
     ->middleware('auth:admin')
-    ->name('central.connect-system');
-
+    ->name('central.redirect-system');
 
 
 /* Auto-generated admin routes */

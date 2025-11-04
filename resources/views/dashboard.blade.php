@@ -8,8 +8,10 @@
 <ul>
     @forelse($systems as $system)
         <li>
-            {{ $system }} -
-            <a href="{{ route('central.connect-system', $system) }}">Conectar</a>
+            <a href="{{ route('central.redirect-system', ['systemName' => $system]) }}">
+                Ir a {{ $system }}
+            </a>
+
         </li>
     @empty
         <li>No estás registrado en ningún sistema adicional.</li>
