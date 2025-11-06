@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserSyncController;
-
+use App\Http\Controllers\LdapLoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,9 +15,31 @@ use App\Http\Controllers\UserSyncController;
 |
 */
 
+// Route::get('/', function () {
+//     return view('brackets/admin-auth::admin.auth.login');
+// });
+
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('ldap.login');
 });
+
+
+Route::middleware('guest')->group(function () {
+    Route::get('/ldap/login', [LdapLoginController::class, 'showLoginForm'])->name('ldap.login');
+    Route::post('/ldap/login', [LdapLoginController::class, 'login'])->name('ldap.login.submit');
+});
+
+Route::middleware('auth:ldap')->group(function () {
+    Route::get('/ldap/dashboard', [UserSyncController::class, 'login'])->name('ldap.dashboard');
+    Route::get('/ldap/redirect/{systemName}', [UserSyncController::class, 'redirectToSystem'])->name('ldap.redirect');
+    // Route::post('/ldap/logout', [UserSyncController::class, 'logout'])->name('ldap.logout');
+});
+
+
+// ✅ Logout disponible siempre (no requiere estar autenticado)
+Route::post('/ldap/logout', [LdapLoginController::class, 'logout'])->name('ldap.logout');
+
+
 
 // Verificar sistemas donde existe el usuario logueado
 Route::get('/central/check-systems', [UserSyncController::class, 'checkAndSync'])

@@ -40,10 +40,15 @@ return [
             'driver' => 'session',
             'provider' => 'admin_users',
         ],
-        
+
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+        ],
+
+        'ldap' => [
+        'driver' => 'session',
+        'provider' => 'ldap_users',
         ],
     ],
 
@@ -68,11 +73,16 @@ return [
         'admin_users' => [
             'driver' => 'eloquent',
             'model' => Brackets\AdminAuth\Models\AdminUser::class,
-        ], 
-        
+        ],
+
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'ldap_users' => [
+        'driver' => 'ldap',
+        'model' => App\Models\LdapUser::class,
         ],
 
         // 'users' => [
@@ -102,7 +112,7 @@ return [
             'table' => 'admin_password_resets',
             'expire' => 60,
         ],
-        
+
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
