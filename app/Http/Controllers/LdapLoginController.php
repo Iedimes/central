@@ -53,7 +53,7 @@ class LdapLoginController extends Controller
             if ($ldap->auth()->attempt($userDN, $password, true)) {
 
                 // Obtener atributos LDAP
-                return $email = strtolower($ldapUser->mail[0] ?? $username);
+                $email = strtolower($ldapUser->mail[0] ?? $username);
                 $first_name = $ldapUser->givenname[0] ?? $username;
                 $last_name  = $ldapUser->sn[0] ?? $username;
 
