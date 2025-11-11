@@ -13,7 +13,7 @@ class UserSyncController extends Controller
 {
     private $systems = [
         'Fonavis' => 'pgsqlfonavis',
-        'Concurso' => 'pgsqlconcurso',
+        'Concursos' => 'pgsqlconcurso',
     ];
 
     private function checkUserAcrossSystems($email)
@@ -85,8 +85,8 @@ class UserSyncController extends Controller
         if (!$token) abort(403, 'No token disponible');
 
         $url = match($systemName) {
-            'Fonavis' => "http://127.0.0.1:8001/admin/login-auto?token=$token",
-            'Concurso' => "http://127.0.0.1:8002/admin/login-auto?token=$token",
+            'Fonavis' => "http://192.168.7.35:8001/admin/login-auto?token=$token",
+            'Concursos' => "http://192.168.7.35:8002/admin/login-auto?token=$token",
             default => abort(404)
         };
 

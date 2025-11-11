@@ -36,7 +36,16 @@ Route::middleware('auth:ldap')->group(function () {
 });
 
 
-// ✅ Logout disponible siempre (no requiere estar autenticado)
+Route::get('/admin/login', function () {
+    return redirect()->route('ldap.login');
+})->name('admin.login.redirect');
+
+// Redirigir cualquier intento de logout del guard admin → al logout LDAP
+Route::match(['get', 'post'], '/admin/logout', [LdapLoginController::class, 'logout'])
+    ->name('admin.logout.redirect');
+
+
+// Logout disponible siempre (no requiere estar autenticado)
 Route::post('/ldap/logout', [LdapLoginController::class, 'logout'])->name('ldap.logout');
 
 

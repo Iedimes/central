@@ -82,7 +82,7 @@ class LdapLoginController extends Controller
                 Auth::guard('admin')->login($localUser);
 
                 // Loguear en guard LDAP
-                Auth::guard('ldap')->login($localUser);
+                // Auth::guard('ldap')->login($localUser);
 
                 // Redirigir al dashboard admin
                 return redirect('admin');

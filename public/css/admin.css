@@ -20083,3 +20083,21 @@ div.trumbowyg-dropdown-table table td.active {
     font-size: 0.875rem !important;
   }
 }
+.app-header.navbar .navbar-brand img {
+  max-width: 475px;
+  max-height: 47px;
+}
+
+.multiselect {
+  width: auto;
+  flex: 1;
+}
+
+.multiselect__tags {
+  height: 100%;
+}
+
+select.form-control {
+  padding: 0 14px 0 0 !important;
+  font-size: 14px;
+}
